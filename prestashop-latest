@@ -1,0 +1,43 @@
+version: '3'
+services:
+  mysql:
+    container_name: some-mysql
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: prestashop
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - prestashop_network
+
+  prestashop:
+    container_name: prestashop
+    image: prestashop/prestashop:8.0
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - 8080:80
+    environment:
+      DB_SERVER: some-mysql
+      DB_NAME: prestashop
+      DB_USER: root
+      DB_PASSWD: admin
+      PS_INSTALL_AUTO: 1
+      PS_FOLDER_ADMIN: admin4577
+      PS_FOLDER_INSTALL: install4577
+      PS_DOMAIN: localhost:8080
+    volumes:
+      - ./prestashop:/var/www/html  # Stocke le code dans le dossier actuel
+      - ./prestashop/config:/var/www/html/config
+      - ./prestashop/admin4577/autoupgrade:/var/www/html/admin4577/autoupgrade
+    networks:
+      - prestashop_network
+
+networks:
+  prestashop_network:
+
+volumes:
+  dbdata:
