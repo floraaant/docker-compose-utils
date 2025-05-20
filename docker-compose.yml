@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: tradecorp_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prestashop:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: tradecorp_web
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8888:80"
+    volumes:
+      - ./www/classes:/app/classes
+      - ./www/img:/app/img
+      - ./www/modules:/app/modules
+      - ./www/themes:/app/themes
+      - ./www/override:/app/override
+      - ./logs/apache:/var/log/apache2
+      - ./docker/php.ini:/opt/docker/etc/php/php.ini
+    environment:
+      PHP_DISPLAY_ERRORS: 1
+      PHP_MEMORY_LIMIT: 512M
+      PHP_MAX_EXECUTION_TIME: 30
+      PHP_POST_MAX_SIZE: 256M
+      PHP_UPLOAD_MAX_FILESIZE: 256M
+    restart: always
